@@ -17,7 +17,7 @@ pod ‘SwrveSDK’
 Requirements
 ------------
 ### Xcode (latest)
-The SDK supports iOS 6+ and the latest version of Xcode (Xcode 6, as the time of writing).
+The SDK supports iOS 8+ and the latest non-beta version of Xcode.
 
 How to run the demo
 -------------------
