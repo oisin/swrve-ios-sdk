@@ -13,7 +13,10 @@
 #import "SwrveCampaign.h"
 #import "SwrvePermissions.h"
 #import "SwrveFileManagement.h"
+<<<<<<< HEAD
 #import "SwrveRESTClient.h"
+=======
+>>>>>>> 1307b244c5fb18a9a5bf9822d476f41dd5fda2ca
 #import "SwrveMigrationsManager.h"
 
 #if SWRVE_TEST_BUILD
@@ -467,6 +470,10 @@ static dispatch_once_t sharedInstanceToken = 0;
         [self setEventFilename:[NSURL fileURLWithPath:swrveConfig.eventCacheFile]];
         [self setEventSecondaryFilename:[NSURL fileURLWithPath:swrveConfig.eventCacheSecondaryFile]];
         [self setEventStream:[self createLogfile:SWRVE_TRUNCATE_IF_TOO_LARGE]];
+        
+        // legacy from 4.7 mirgrate the event file to suitable protection in background
+        [SwrveMigrationsManager migrateFileProtectionAtPath:[[self eventFilename] path]];
+        [SwrveMigrationsManager migrateFileProtectionAtPath:swrveConfig.installTimeCacheFile];
 
         // legacy from 4.7 mirgrate the event file to suitable protection in background
         [SwrveMigrationsManager migrateFileProtectionAtPath:[[self eventFilename] path]];
@@ -971,7 +978,6 @@ static dispatch_once_t sharedInstanceToken = 0;
 }
 
 -(void) sendQueuedEvents {
-
     if (!self.userID) {
         DebugLog(@"Swrve user_id is null. Not sending data.", nil);
         return;
@@ -998,7 +1004,7 @@ static dispatch_once_t sharedInstanceToken = 0;
     NSString* session_token = [self createSessionToken];
     NSString* array_body = [self copyBufferToJson:buffer];
     NSString* json_string = [self createJSON:session_token events:array_body];
-
+    
     NSData* json_data = [json_string dataUsingEncoding:NSUTF8StringEncoding];
     [self setEventsWereSent:YES];
 
@@ -1023,7 +1029,6 @@ static dispatch_once_t sharedInstanceToken = 0;
                     [self eventsSentCallback:HTTP_SERVER_ERROR withData:data andContext:sendContext]; //503 network error
                     return;
                 }
-
                 enum HttpStatus status = HTTP_SUCCESS;
                 if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
                     NSHTTPURLResponse* httpResponse = (NSHTTPURLResponse*)response;
@@ -1035,9 +1040,8 @@ static dispatch_once_t sharedInstanceToken = 0;
 
 -(void) saveEventsToDisk {
     DebugLog(@"Writing unsent event data to file", nil);
-
+    
     [self queueUserUpdates];
-
     NSArray* buffer = self.eventBuffer;
     @synchronized (buffer) {
         if ([self eventStream] && [buffer count] > 0) {
@@ -1064,8 +1068,7 @@ static dispatch_once_t sharedInstanceToken = 0;
 -(void) shutdown
 {
     DebugLog(@"shutting down swrveInstance..", nil);
-    if ([[SwrveInstanceIDRecorder sharedInstance] hasSwrveInstanceID:instanceID] == NO)
-    {
+    if ([[SwrveInstanceIDRecorder sharedInstance] hasSwrveInstanceID:instanceID] == NO) {
         DebugLog(@"Swrve shutdown: called on invalid instance.", nil);
         return;
     }
@@ -1386,9 +1389,14 @@ static NSString* httpScheme(bool useHttps)
 }
 
 -(void) queueEvent:(NSString*)eventType data:(NSMutableDictionary*)eventData triggerCallback:(bool)triggerCallback {
+<<<<<<< HEAD
 
     NSMutableArray* buffer = self.eventBuffer;
     if (buffer) {
+=======
+    
+    if ([self eventBuffer]) {
+>>>>>>> 1307b244c5fb18a9a5bf9822d476f41dd5fda2ca
         // Add common attributes (if not already present)
         if (![eventData objectForKey:@"type"]) {
             [eventData setValue:eventType forKey:@"type"];
@@ -1408,6 +1416,10 @@ static NSString* httpScheme(bool useHttps)
             }
 
             if (triggerCallback && event_queued_callback != NULL ) {
+<<<<<<< HEAD
+=======
+                
+>>>>>>> 1307b244c5fb18a9a5bf9822d476f41dd5fda2ca
                 event_queued_callback(eventData, json_string);
             }
         }
@@ -1700,11 +1712,19 @@ static NSString* httpScheme(bool useHttps)
     NSURL *fileURL = [NSURL fileURLWithPath:self.config.locationCampaignCacheFile];
     NSURL *signatureURL = [NSURL fileURLWithPath:self.config.locationCampaignCacheSignatureFile];
     NSString *signatureKey = [self getSignatureKey];
+<<<<<<< HEAD
 
     // legacy 4.7 migration
     [SwrveMigrationsManager migrateFileProtectionAtPath:[fileURL path]];
     [SwrveMigrationsManager migrateFileProtectionAtPath:[signatureURL path]];
 
+=======
+    
+    // legacy 4.7 migration
+    [SwrveMigrationsManager migrateFileProtectionAtPath:[fileURL path]];
+    [SwrveMigrationsManager migrateFileProtectionAtPath:[signatureURL path]];
+    
+>>>>>>> 1307b244c5fb18a9a5bf9822d476f41dd5fda2ca
     SwrveSignatureProtectedFile *locationCampaignFile = [[SwrveSignatureProtectedFile alloc] initFile:fileURL signatureFilename:signatureURL usingKey:signatureKey];
     return locationCampaignFile;
 }
@@ -1851,6 +1871,7 @@ enum HttpStatus {
                 break;
             case HTTP_SERVER_ERROR:
                 DebugLog(@"Error sending event data to Swrve (%@) Adding data back onto unsent message buffer", [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]);
+<<<<<<< HEAD
 
                 NSMutableArray* buffer = swrve.eventBuffer;
                 @synchronized (buffer) {
@@ -1859,6 +1880,10 @@ enum HttpStatus {
                     }
                 }
                 [swrve setEventBufferBytes:swrve.eventBufferBytes + [client_info bufferLength]];
+=======
+                [[swrve eventBuffer] addObjectsFromArray:[client_info buffer]];
+                [swrve setEventBufferBytes:[swrve eventBufferBytes] + [client_info bufferLength]];
+>>>>>>> 1307b244c5fb18a9a5bf9822d476f41dd5fda2ca
                 [swrve saveEventsToDisk];
                 break;
         }
@@ -1933,7 +1958,11 @@ enum HttpStatus {
 }
 
 - (void) sendLogfile {
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 1307b244c5fb18a9a5bf9822d476f41dd5fda2ca
     if (![self eventStream]) return;
     if (![self eventFileHasData]) return;
 
@@ -1965,11 +1994,19 @@ enum HttpStatus {
     [restClient sendHttpPOSTRequest:[self batchURL]
                       jsonData:json_data
              completionHandler:^(NSURLResponse* response, NSData* data, NSError* error) {
+<<<<<<< HEAD
 
                  SwrveSendLogfileContext* logfileContext = [[SwrveSendLogfileContext alloc] init];
                  [logfileContext setSwrveReference:self];
                  [logfileContext setSwrveInstanceID:self->instanceID];
 
+=======
+                 
+                 SwrveSendLogfileContext* logfileContext = [[SwrveSendLogfileContext alloc] init];
+                 [logfileContext setSwrveReference:self];
+                 [logfileContext setSwrveInstanceID:self->instanceID];
+                 
+>>>>>>> 1307b244c5fb18a9a5bf9822d476f41dd5fda2ca
         if (error) {
             DebugLog(@"Error opening HTTP stream when sending the contents of the log file", nil);
             [self logfileSentCallback:HTTP_SERVER_ERROR withData:data andContext:logfileContext]; //HTTP 503 Error, service not available
